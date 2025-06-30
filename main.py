@@ -3,13 +3,9 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from functions.get_files_info import get_files_info
-from functions.get_file_content import get_file_content
-from functions.run_python import run_python_file
-from functions.write_file import write_file
 
 from prompts import system_prompt
-from call_function import available_functions
+from call_function import available_functions, call_function
 
 def main():
     load_dotenv()
@@ -56,52 +52,19 @@ def generate_content(client, model_name, messages, verbose):
     if not response.function_calls:
         return response.text
 
+    function_responses = []
     for function_call_part in response.function_calls:
         content = call_function(function_call_part, verbose)
         content_response = content.parts[0].function_response.response
+        function_responses.append(content.parts[0])
 
         if content_response:
             if verbose:
                 print(f"-> {content_response}")
         else:
-            raise NotImplementedError("Function was not called")
-
-
-def call_function(function_call_part, verbose=False):
-    function_map = {"get_files_info" : get_files_info, "get_file_content" : get_file_content, "run_python_file" : run_python_file, "write_file" :  write_file}
-    working_dir = "./calculator"
-
-    function_name = function_call_part.name
-    if function_name not in function_map:
-        return types.Content(
-            role="tool",
-            parts=[
-                types.Part.from_function_response(
-                    name=function_name,
-                    response={"error": f"Unknown function: {function_name}"},
-                )
-            ],
-        )
-
-    args_dic = dict(function_call_part.args)
-    args_dic["working_directory"] = working_dir
-    
-    if verbose:
-        print(f"Calling function: {function_name}({function_call_part.args})")
-    else:
-        print(f" - Calling function: {function_name}")
-
-    function_result = function_map[function_name](**args_dic)
-
-    return types.Content(
-        role="tool",
-        parts=[
-            types.Part.from_function_response(
-                name=function_name,
-                response={"result": function_result},
-            )
-        ],
-    )
+            raise Exception("empty function call resutl")
+    if not function_responses:
+        raise Exception("no function responses generated, exiting.")
 
 
 if __name__=="__main__":
