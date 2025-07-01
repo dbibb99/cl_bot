@@ -17,6 +17,11 @@ available_functions = types.Tool(
     )
 
 def call_function(function_call_part, verbose=False):
+    if verbose:
+        print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+    else:
+        print(f" - Calling function: {function_call_part.name}")
+
     function_map = {"get_files_info" : get_files_info, "get_file_content" : get_file_content, "run_python_file" : run_python_file, "write_file" :  write_file}
     working_dir = WORKING_DIR
 
@@ -35,11 +40,6 @@ def call_function(function_call_part, verbose=False):
     args_dic = dict(function_call_part.args)
     args_dic["working_directory"] = working_dir
     
-    if verbose:
-        print(f"Calling function: {function_name}({function_call_part.args})")
-    else:
-        print(f" - Calling function: {function_name}")
-
     function_result = function_map[function_name](**args_dic)
 
     return types.Content(
